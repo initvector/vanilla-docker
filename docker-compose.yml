@@ -1,23 +1,20 @@
 version: "3.5"
 
 services:
-    httpd:
+    database:
         build:
-            context: "./images/httpd"
-        container_name: "httpd"
-        depends_on:
-            - "php-fpm"
+            context: "./images/${VANILLA_DOCKER_DATABASE}"
+        container_name: "database"
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
         networks:
             - "vanilla_network"
         ports:
-            - "9080:9080"
-            - "9443:9443"
+            - "3306:3306"
         volumes:
-            - "shared:/shared" # allow to use the php-fpm socket
-            - "./logs/httpd:/var/log/httpd"
-            - "./resources/certificates:/certificates"
-            - "./resources/usr/local/apache2/conf.d:/usr/local/apache2/conf.d"
-            - "../:/srv/vanilla-repositories"
+            - "./logs/${VANILLA_DOCKER_DATABASE}:/var/log/mysql"
+            - "./resources/etc/mysql/conf.d/:/etc/mysql/conf.d/"
+            - "datastorage:/var/lib/mysql"
 
     nginx:
         build:
@@ -79,8 +76,13 @@ services:
             - "./resources/sphinx:/sphinx" # expose sphinx API. We have to do this here because we need to be enable to update the plugin before we can start the container.
             - "./resources/usr/local/etc/php/conf.d:/usr/local/etc/php/custom.conf.d"
             - "../:/srv/vanilla-repositories"
+        depends_on:
+            - "database"
 
 volumes:
+    datastorage:
+        # Created by our setup script.
+        external: true
     shared:
 
 networks:
