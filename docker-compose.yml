@@ -3,7 +3,7 @@ version: "3.5"
 services:
     database:
         build:
-            context: "./images/${VANILLA_DOCKER_DATABASE}"
+            context: "./images/percona"
         container_name: "database"
         environment:
             MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
