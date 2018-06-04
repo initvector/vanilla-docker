@@ -1,4 +1,4 @@
-FROM php:7.2-fpm
+FROM php:7.1.18-fpm-alpine3.7
 
 RUN apt-get update \
     && apt-get install -y \
