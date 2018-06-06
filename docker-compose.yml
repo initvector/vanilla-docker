@@ -1,9 +1,18 @@
 version: "3.5"
 
 services:
+    blackfire:
+        container_name: "blackfire"
+        image: "blackfire/blackfire"
+        environment:
+            - "BLACKFIRE_SERVER_ID"
+            - "BLACKFIRE_SERVER_TOKEN"
+        networks:
+            - "vanilla_network"
+
     database:
         build:
-            context: "./images/percona"
+            context: "./images/perconadb"
         container_name: "database"
         environment:
             MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
@@ -20,7 +29,7 @@ services:
         build:
             context: "./images/nginx"
         # Transform the template into an actual file
-        command: /bin/bash -c "envsubst < /etc/nginx/fastcgi.conf.tpl > /etc/nginx/fastcgi.conf && nginx -g 'daemon off;'"
+        command: /bin/ash -c "envsubst < /etc/nginx/fastcgi.conf.tpl > /etc/nginx/fastcgi.conf && nginx -g 'daemon off;'"
         container_name: "nginx"
         depends_on:
             - "php-fpm"
@@ -61,6 +70,8 @@ services:
             context: "./images/php-fpm"
         container_name: "php-fpm"
         environment:
+            - "BLACKFIRE_CLIENT_ID"
+            - "BLACKFIRE_CLIENT_TOKEN"
             - "PHP_INI_SCAN_DIR=:/usr/local/etc/php/custom.conf.d" # Allow users to override configs
             - "TEST_BASEURL"
             - "TEST_DB_HOST"
