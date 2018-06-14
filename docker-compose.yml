@@ -1,44 +1,36 @@
 version: "3.5"
 
 services:
-    httpd:
+    blackfire:
+        container_name: "blackfire"
+        image: "blackfire/blackfire"
+        environment:
+            - "BLACKFIRE_SERVER_ID"
+            - "BLACKFIRE_SERVER_TOKEN"
+        networks:
+            - "vanilla_network"
+
+    database:
         build:
-            context: "./images/httpd"
-        container_name: "httpd"
-        depends_on:
-            - "php-fpm"
+            context: "./images/perconadb"
+        container_name: "database"
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
         networks:
             - "vanilla_network"
         ports:
-            - "9080:9080"
-            - "9443:9443"
+            - "3306:3306"
         volumes:
-            - "shared:/shared" # allow to use the php-fpm socket
-            - "./logs/httpd:/var/log/httpd"
-            - "./resources/certificates:/certificates"
-            - "./resources/usr/local/apache2/conf.d:/usr/local/apache2/conf.d"
-            - "../:/srv/vanilla-repositories"
+            - "./logs/perconadb:/var/log/mysql"
+            - "./resources/etc/mysql/conf.d/:/etc/mysql/conf.d/"
+            - "datastorage:/var/lib/mysql"
 
     nginx:
         build:
             context: "./images/nginx"
-        # Transform the template into an actual file
-        command: /bin/bash -c "envsubst < /etc/nginx/fastcgi.conf.tpl > /etc/nginx/fastcgi.conf && nginx -g 'daemon off;'"
         container_name: "nginx"
         depends_on:
             - "php-fpm"
-        environment:
-            - "DOLLAR=$$"
-            - "FASTCGI_SPLIT_PATH_INFO=${VANILLA_DOCKER_FASTCGI_SPLIT_PATH_INFO}"
-            - "FASTCGI_INTERCEPT_ERRORS=${VANILLA_DOCKER_FASTCGI_INTERCEPT_ERRORS}"
-            - "FASTCGI_IGNORE_CLIENT_ABORT=${VANILLA_DOCKER_FASTCGI_IGNORE_CLIENT_ABORT}"
-            - "FASTCGI_CONNECT_TIMEOUT=${VANILLA_DOCKER_FASTCGI_CONNECT_TIMEOUT}"
-            - "FASTCGI_SEND_TIMEOUT=${VANILLA_DOCKER_FASTCGI_SEND_TIMEOUT}"
-            - "FASTCGI_READ_TIMEOUT=${VANILLA_DOCKER_FASTCGI_READ_TIMEOUT}"
-            - "FASTCGI_BUFFER_SIZE=${VANILLA_DOCKER_FASTCGI_BUFFER_SIZE}"
-            - "FASTCGI_BUFFERS=${VANILLA_DOCKER_FASTCGI_BUFFERS}"
-            - "FASTCGI_BUSY_BUFFERS_SIZE=${VANILLA_DOCKER_FASTCGI_BUSY_BUFFERS_SIZE}"
-            - "FASTCGI_TEMP_FILE_WRITE_SIZE=${VANILLA_DOCKER_FASTCGI_TEMP_FILE_WRITE_SIZE}"
         networks:
             vanilla_network:
                 aliases: # Allows (sso|dev).vanilla.localhost to be resolved internally from php-fpm
@@ -64,6 +56,8 @@ services:
             context: "./images/php-fpm"
         container_name: "php-fpm"
         environment:
+            - "BLACKFIRE_CLIENT_ID"
+            - "BLACKFIRE_CLIENT_TOKEN"
             - "PHP_INI_SCAN_DIR=:/usr/local/etc/php/custom.conf.d" # Allow users to override configs
             - "TEST_BASEURL"
             - "TEST_DB_HOST"
@@ -79,8 +73,13 @@ services:
             - "./resources/sphinx:/sphinx" # expose sphinx API. We have to do this here because we need to be enable to update the plugin before we can start the container.
             - "./resources/usr/local/etc/php/conf.d:/usr/local/etc/php/custom.conf.d"
             - "../:/srv/vanilla-repositories"
+        depends_on:
+            - "database"
 
 volumes:
+    datastorage:
+        # Created by our setup script.
+        external: true
     shared:
 
 networks:
