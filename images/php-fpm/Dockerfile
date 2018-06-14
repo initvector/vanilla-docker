@@ -13,8 +13,8 @@ RUN apk add --update --no-cache gcc libc-dev autoconf make libpng-dev libmcrypt-
 
 COPY ["./usr/local/etc/php-fpm.conf", "/usr/local/etc/php-fpm.conf"]
 COPY ["./usr/local/etc/php/conf.d/*", "/usr/local/etc/php/conf.d/"]
+COPY ["./opt/*", "/opt/"]
 
 RUN ["mkdir", "-p",  "/shared/var/run/"]
 
-COPY ["./opt/*", "/opt/"]
 CMD  ["/opt/docker-startup.sh"]
