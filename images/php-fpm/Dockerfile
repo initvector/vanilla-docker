@@ -15,6 +15,4 @@ COPY ["./usr/local/etc/php-fpm.conf", "/usr/local/etc/php-fpm.conf"]
 COPY ["./usr/local/etc/php/conf.d/*", "/usr/local/etc/php/conf.d/"]
 COPY ["./opt/*", "/opt/"]
 
-RUN ["mkdir", "-p",  "/shared/var/run/"]
-
 CMD  ["/opt/docker-startup.sh"]
